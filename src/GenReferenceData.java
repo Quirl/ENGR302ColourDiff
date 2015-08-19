@@ -37,8 +37,8 @@ public class GenReferenceData {
 		return boxes;
 	}
 
-	public static final float[][] getTrims(BufferedImage img, List<Rectangle> trims){
-		float[][] data = new float[trims.size()][3];
+	public static final HSBColor[] getTrims(BufferedImage img, List<Rectangle> trims){
+		HSBColor[] data = new HSBColor[trims.size()];
 		for(int i = 0;i < trims.size();i ++){
 			Rectangle r = trims.get(i);
 			BufferedImage subImg = img.getSubimage(r.x, r.y, r.width, r.height);
@@ -53,16 +53,14 @@ public class GenReferenceData {
 		}
 		List<Rectangle> sources = readConfigFile(args[0]);
 		BufferedImage referenceStrip = ImageIO.read(new File(args[1]));
-		float[][] referenceMedians = getTrims(referenceStrip, sources);
+		HSBColor[] referenceMedians = getTrims(referenceStrip, sources);
 		File[] references = new File(args[2]).listFiles();
-		Map<String, float[][]> dists = new HashMap<String, float[][]>();
+		Map<String, HSBColor[]> dists = new HashMap<String, HSBColor[]>();
 		for(File f : references){
 			BufferedImage source = ImageIO.read(f);
-			float[][] medians = getTrims(source, sources);
+			HSBColor[] medians = getTrims(source, sources);
 			for(int i = 0;i < medians.length;i ++){
-				for(int j = 0;j < 3;j ++){
-					medians[i][j] = referenceMedians[i][j] - medians[i][j];
-				}
+				medians[i] = referenceMedians[i].differenceFrom(medians[i]);
 			}
 			dists.put(f.getName().substring(0, f.getName().indexOf(".")), medians);
 		}
