@@ -116,7 +116,7 @@ public class ColorRecog {
 		Map<String, Float> dists = processImage(startImage, endImage, data);
 		double sum = 0;
 		for (String s : dists.keySet()) {
-			dists.put(s, (float) (1. / dists.get(s)));
+			dists.put(s, (float) (1.0 / (dists.get(s)+1)));
 		}
 
 		for (double d : dists.values()) {
@@ -124,7 +124,7 @@ public class ColorRecog {
 		}
 
 		for (String s : dists.keySet()) {
-			dists.put(s, (float) (dists.get(s) / sum));
+			dists.put(s, (float) (dists.get(s) / (sum+1)));
 		}
 
 		dists = sortByValue(dists);
