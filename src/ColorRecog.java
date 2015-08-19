@@ -18,7 +18,7 @@ import javax.imageio.ImageIO;
 public class ColorRecog {
 
 	private static Context readDat(String fName) throws IOException {
-		Map<String, float[][]> references = new HashMap<String, float[][]>();
+		Map<String, HSBColor[]> references = new HashMap<String, HSBColor[]>();
 		try (DataInputStream str = new DataInputStream(new FileInputStream(
 				fName))) {
 			int numBoxes = str.readInt();
@@ -37,12 +37,10 @@ public class ColorRecog {
 			System.out.println();
 
 			for (int z = 0; z < numReferences; z++) {
-				float[][] data = new float[numBoxes][3];
+				HSBColor[] data = new HSBColor[numBoxes];
 				String name = str.readUTF();
 				for (int i = 0; i < data.length; i++) {
-					for (int j = 0; j < 3; j++) {
-						data[i][j] = str.readFloat();
-					}
+					data[i] = new HSBColor(str.readFloat(), str.readFloat(), str.readFloat());
 				}
 				references.put(name, data);
 			}
@@ -50,15 +48,13 @@ public class ColorRecog {
 		}
 	}
 
-	private static final Map<String, Float> estimateFromImage(float[][] images,
+	private static final Map<String, Float> estimateFromImage(HSBColor[] images,
 			Context context) throws IOException {
 		Map<String, Float> dists = new HashMap<String, Float>();
-		for (Map.Entry<String, float[][]> clas : context.diffs.entrySet()) {
+		for (Map.Entry<String, HSBColor[]> clas : context.diffs.entrySet()) {
 			float dist = 0;
 			for (int i = 0; i < clas.getValue().length; i++) {
-				for (int j = 0; j < clas.getValue()[0].length; j++) {
-					dist += Math.pow(clas.getValue()[i][j] - images[i][j], 2);
-				}
+				dist += clas.getValue()[i].floatDifferenceFrom(images[i]);
 			}
 			dists.put(clas.getKey(), dist);
 		}
@@ -70,16 +66,15 @@ public class ColorRecog {
 		List<Rectangle> sources = context.sections;
 		HSBImage[] startSubImages = new HSBImage[sources.size()];
 		HSBImage[] endSubImages = new HSBImage[sources.size()];
-		float[][] allDiffs = new float[startSubImages.length][3];
+		HSBColor[] allDiffs = new HSBColor[startSubImages.length];
 		for (int i = 0; i < startSubImages.length; i++) {
 			Rectangle r = sources.get(i);
 			startSubImages[i] = new HSBImage(startImage.getSubimage(r.x, r.y, r.width, r.height));
 			endSubImages[i] = new HSBImage(endImage.getSubimage(r.x, r.y, r.width, r.height));
-			float[] reference = startSubImages[i].medianColor();
-			float[] actual = endSubImages[i].medianColor();
-			for (int j = 0; j < 3; j++) {
-				allDiffs[i][j] = reference[j] - actual[j];
-			}
+			
+			HSBColor reference = startSubImages[i].medianColor();
+			HSBColor actual = endSubImages[i].medianColor();
+			allDiffs[i] = reference.differenceFrom(actual);
 		}
 
 		return estimateFromImage(allDiffs, context);
@@ -121,7 +116,7 @@ public class ColorRecog {
 		Map<String, Float> dists = processImage(startImage, endImage, data);
 		double sum = 0;
 		for (String s : dists.keySet()) {
-			dists.put(s, (float) (1. / dists.get(s)));
+			dists.put(s, (float) (1.0 / (dists.get(s)+1)));
 		}
 
 		for (double d : dists.values()) {
@@ -129,7 +124,7 @@ public class ColorRecog {
 		}
 
 		for (String s : dists.keySet()) {
-			dists.put(s, (float) (dists.get(s) / sum));
+			dists.put(s, (float) (dists.get(s) / (sum+1)));
 		}
 
 		dists = sortByValue(dists);

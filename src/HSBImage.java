@@ -19,22 +19,21 @@ public class HSBImage {
 		}
 	}
 
-	public float[] medianColor(){
-		float[] h =	new float[data.length];
-		float[] s =	new float[data.length];
-		float[] b =	new float[data.length];
+	public HSBColor medianColor(){
+		float[] hArr =	new float[data.length];
+		float[] sArr =	new float[data.length];
+		float[] bArr =	new float[data.length];
 		for(int i = 0;i < data.length;i ++){
-			h[i] = data[i].h;
-			s[i] = data[i].s;
-			b[i] = data[i].b;
+			hArr[i] = data[i].h;
+			sArr[i] = data[i].s;
+			bArr[i] = data[i].b;
 		}
-		Arrays.sort(h);
-		Arrays.sort(s);
-		Arrays.sort(b);
-		float[] out = new float[3];
-		out[0] = h[data.length / 2];
-		out[1] = s[data.length / 2];
-		out[2] = b[data.length / 2];
-		return out;
+		Arrays.sort(hArr);
+		Arrays.sort(sArr);
+		Arrays.sort(bArr);
+		float hMed = hArr[data.length / 2];
+		float sMed = sArr[data.length / 2];
+		float bMed = bArr[data.length / 2];
+		return new HSBColor(hMed, sMed, bMed);
 	}
 }
