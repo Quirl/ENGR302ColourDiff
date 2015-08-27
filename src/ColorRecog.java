@@ -19,8 +19,7 @@ public class ColorRecog {
 
 	private static Context readDat(String fName) throws IOException {
 		Map<String, HSBColor[]> references = new HashMap<String, HSBColor[]>();
-		try (DataInputStream str = new DataInputStream(new FileInputStream(
-				fName))) {
+		try (DataInputStream str = new DataInputStream(new FileInputStream(fName))) {
 			int numBoxes = str.readInt();
 			int numReferences = str.readInt();
 
