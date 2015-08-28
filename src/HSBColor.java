@@ -6,9 +6,9 @@ public class HSBColor {
 		b = _b;
 	}
 	public HSBColor differenceFrom(HSBColor other) {
-		return new HSBColor(Math.abs(this.h - other.h)
-				, Math.abs(this.s - other.s)
-				, Math.abs(this.b - other.b));
+		return new HSBColor(this.h - other.h
+				, this.s - other.s
+				, this.b - other.b);
 	}
 	public float floatDifferenceFrom(HSBColor other) {
 		return Math.abs(this.h - other.h) + Math.abs(this.s - other.s) + Math.abs(this.b - other.b);
