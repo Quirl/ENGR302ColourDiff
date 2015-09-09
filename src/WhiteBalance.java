@@ -13,7 +13,7 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
-/** 
+/**
  * A simple (Testing) white balancing implementation that doesnt seem to work
  * very well.
  *
@@ -39,10 +39,10 @@ public class WhiteBalance {
 				whites.add(white);
 			}
 		}
-		
+
 		return whites;
 	}
-	
+
 	/**
 	 * Calculates the median RGB color in an image over all the channels
 	 * @param img The image to find the median colour in
@@ -60,7 +60,7 @@ public class WhiteBalance {
 			greens[i] = (rgb >> 8) & 0xFF;
 			blues[i]  = (rgb >> 0) & 0xFF;
 		}
-		
+
 		Arrays.sort(reds);
 		Arrays.sort(greens);
 		Arrays.sort(blues);
@@ -69,7 +69,7 @@ public class WhiteBalance {
 		int blue = blues[blues.length / 2];
 		return new Color(red, green, blue);
 	}
-	
+
 	/**
 	 * Returns the distance between a given point and a rectangle
 	 * @param p the point
@@ -89,10 +89,10 @@ public class WhiteBalance {
 				minDistance = distance;
 			}
 		}
-		
+
 		return minDistance;
 	}
-	
+
 	/**
 	 * Returns a (hopefully) white balanced version of the given image, assuming that the colour
 	 * in the given rectangles is supposed to be white
@@ -103,7 +103,7 @@ public class WhiteBalance {
 	private static BufferedImage processImage(BufferedImage fullImage, List<Rectangle> whiteSpots){
 		System.out.printf("Image Dimensions: %dx%d\n", fullImage.getWidth(), fullImage.getHeight());
 		List<Color> subImageMedians = new ArrayList<Color>(whiteSpots.size());
-		
+
 		//Find the medians for all the white spots
 		for(Rectangle rect : whiteSpots){
 			BufferedImage subImage = fullImage.getSubimage(rect.x, rect.y, rect.width, rect.height);
@@ -111,10 +111,10 @@ public class WhiteBalance {
 			subImageMedians.add(median);
 			System.out.printf("Found median color: %s\n", median);
 		}
-		
+
 		int[] fullRGB = new int[fullImage.getWidth() * fullImage.getHeight()];
 		fullImage.getRGB(0, 0, fullImage.getWidth(), fullImage.getHeight(), fullRGB, 0, fullImage.getWidth());
-		
+
 		for(int y = 0;y < fullImage.getHeight();y ++){
 			for(int x = 0;x < fullImage.getWidth();x ++){
 				List<Double> distances = new ArrayList<Double>(whiteSpots.size());
@@ -123,7 +123,7 @@ public class WhiteBalance {
 					for(Rectangle spot : whiteSpots){
 						distances.add(distanceFromRectangle(new Point(x, y), spot));
 					}
-					
+
 					double sum = distances.stream().mapToDouble(i->i).sum();
 					for(int i = 0;i < distances.size();i ++){
 						distances.set(i, distances.get(i) / sum);
@@ -132,12 +132,12 @@ public class WhiteBalance {
 				else{
 					distances.add(1.);
 				}
-				
+
 				//Calculate the white corrected value
 				double weightedRed = 0;
 				double weightedGreen = 0;
 				double weightedBlue = 0;
-				
+
 				for(int i = 0;i < distances.size();i ++){
 					weightedRed += distances.get(i) * subImageMedians.get(i).getRed();
 					weightedGreen += distances.get(i) * subImageMedians.get(i).getGreen();
@@ -147,32 +147,32 @@ public class WhiteBalance {
 				int oldRed   = (fullRGB[index] >> 16) & 0xFF;
 				int oldGreen = (fullRGB[index] >> 8) & 0xFF;
 				int oldBlue  = (fullRGB[index] >> 0) & 0xFF;
-				int newRed   = (int)(oldRed * (255. / weightedRed)) & 0xFF;
-				int newGreen = (int)(oldGreen * (255. / weightedGreen)) & 0xFF;
-				int newBlue   = (int)(oldBlue * (255. / weightedBlue)) & 0xFF;
+				int newRed   = (int)Math.min(oldRed * (255. / weightedRed), 255);
+				int newGreen = (int)Math.min(oldGreen * (255. / weightedGreen), 255);
+				int newBlue   = (int)Math.min(oldBlue * (255. / weightedBlue), 255);
 				int newCol = (0xFF << 24) | (newRed << 16) | (newGreen << 8) | newBlue;
 				fullRGB[index] = newCol;
 			}
 		}
-		
+
 		BufferedImage newImg = new BufferedImage(fullImage.getWidth(), fullImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		newImg.setRGB(0, 0, newImg.getWidth(), newImg.getHeight(), fullRGB, 0, newImg.getWidth());
-		
+
 		return newImg;
 	}
-	
+
 	public static void main(String[] args){
 		if(args.length != 2){
 			System.err.println("Usage: java WhiteBalance <config_file> <image>");
 			System.exit(1);
 		}
-		
+
 		String configFile = args[0];
 		String imageFile = args[1];
-		
-		System.out.printf("Processing image %s\n", imageFile);
+
+		System.out.printf("Processing image %s\n", new File(imageFile).getAbsolutePath());
 		System.out.printf("With config file %s\n", configFile);
-		
+
 		List<Rectangle> whiteSpots = null;
 		try{
 			whiteSpots = readConfigFile(configFile);
@@ -185,9 +185,9 @@ public class WhiteBalance {
 			System.err.println("Malformed Config File");
 			System.exit(3);
 		}
-		
+
 		System.out.printf("Found %d rectangles in config file\n", whiteSpots.size());
-		
+
 		BufferedImage img = null;
 		try{
 			img = ImageIO.read(new File(imageFile));
@@ -196,7 +196,7 @@ public class WhiteBalance {
 			System.err.println("Failed to read image file");
 			System.exit(4);
 		}
-		
+
 		BufferedImage outImage = processImage(img, whiteSpots);
 		try{
 			ImageIO.write(outImage, "png", new File("output.png"));
