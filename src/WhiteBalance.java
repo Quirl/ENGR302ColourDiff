@@ -3,9 +3,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,28 +17,10 @@ import javax.imageio.ImageIO;
  *
  */
 public class WhiteBalance {
-	/**
-	 * Reads in the configuration file, which should be a space separated list of 4-tuples being
-	 * the x, y, w, h of the white rectangles in the image
-	 * @param configFileName the file to read from
-	 * @return The list of rectangles read from the file
-	 * @throws IOException if something bad happens
-	 */
-	private static List<Rectangle> readConfigFile(String configFileName) throws IOException{
-		List<Rectangle> whites = new ArrayList<Rectangle>();
-		try(BufferedReader in = new BufferedReader(new FileReader(configFileName))){
-			while(in.ready()){
-				String[] lineData = in.readLine().split(" ");
-				if(lineData.length == 0)continue;
-				if(lineData.length != 4)throw new IllegalArgumentException("Malformed line in config file");
-				//Java8 stream stuff to parse the line
-				int[] rectData = Arrays.stream(lineData).mapToInt(Integer::parseInt).toArray();
-				Rectangle white = new Rectangle(rectData[0], rectData[1], rectData[2], rectData[3]);
-				whites.add(white);
-			}
-		}
-
-		return whites;
+	private ConfigFile whiteSpots;
+	
+	public WhiteBalance(String configFile) throws IOException{
+		whiteSpots = new ConfigFile(configFile);
 	}
 
 	/**
@@ -48,7 +28,7 @@ public class WhiteBalance {
 	 * @param img The image to find the median colour in
 	 * @return the median colour from the image
 	 */
-	private static Color getMedianColor(BufferedImage img){
+	private Color getMedianColor(BufferedImage img){
 		int[] reds = new int[img.getWidth() * img.getHeight()];
 		int[] greens = new int[img.getWidth() * img.getHeight()];
 		int[] blues = new int[img.getWidth() * img.getHeight()];
@@ -76,7 +56,7 @@ public class WhiteBalance {
 	 * @param r the rectangle
 	 * @return the distance between the point and the rectangle
 	 */
-	private static double distanceFromRectangle(Point p, Rectangle r){
+	private double distanceFromRectangle(Point p, Rectangle r){
 		Line2D[] sidesOfRectangle = new Line2D.Double[4];
 		sidesOfRectangle[0] = new Line2D.Double(r.getMinX(), r.getMinY(), r.getMinX() + r.getWidth(), r.getMinY());
 		sidesOfRectangle[1] = new Line2D.Double(r.getMinX() + r.getWidth(), r.getMinY(), r.getMinX() + r.getWidth(), r.getMinY() + r.getHeight());
@@ -100,7 +80,7 @@ public class WhiteBalance {
 	 * @param whiteSpots the supposedly white spots of the image
 	 * @return the white-balanced image
 	 */
-	private static BufferedImage processImage(BufferedImage fullImage, List<Rectangle> whiteSpots){
+	public BufferedImage balance(BufferedImage fullImage){
 		System.out.printf("Image Dimensions: %dx%d\n", fullImage.getWidth(), fullImage.getHeight());
 		List<Color> subImageMedians = new ArrayList<Color>(whiteSpots.size());
 
@@ -169,13 +149,10 @@ public class WhiteBalance {
 
 		String configFile = args[0];
 		String imageFile = args[1];
-
-		System.out.printf("Processing image %s\n", new File(imageFile).getAbsolutePath());
-		System.out.printf("With config file %s\n", configFile);
-
-		List<Rectangle> whiteSpots = null;
+		WhiteBalance balance = null;
+		
 		try{
-			whiteSpots = readConfigFile(configFile);
+			balance = new WhiteBalance(configFile);
 		}
 		catch(IOException e){
 			System.err.println("Failed to read config file");
@@ -186,8 +163,6 @@ public class WhiteBalance {
 			System.exit(3);
 		}
 
-		System.out.printf("Found %d rectangles in config file\n", whiteSpots.size());
-
 		BufferedImage img = null;
 		try{
 			img = ImageIO.read(new File(imageFile));
@@ -197,7 +172,7 @@ public class WhiteBalance {
 			System.exit(4);
 		}
 
-		BufferedImage outImage = processImage(img, whiteSpots);
+		BufferedImage outImage = balance.balance(img);
 		try{
 			ImageIO.write(outImage, "png", new File("output.png"));
 		}
