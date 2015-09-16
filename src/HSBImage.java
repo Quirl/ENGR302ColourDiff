@@ -2,7 +2,10 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
-
+/**
+ * An Image in HSB space
+ *
+ */
 public class HSBImage {
 	private HSBColor[] data;
 	public HSBImage(BufferedImage img){

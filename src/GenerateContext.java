@@ -6,7 +6,11 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-
+/**
+ * A Utility class to generate a Context 
+ * based on a number of image files
+ *
+ */
 public class GenerateContext {
 	public static void main(String[] args) throws IOException{
 		if(args.length < 3){
@@ -29,12 +33,16 @@ public class GenerateContext {
 			}
 			
 			BufferedImage img = ImageIO.read(inFile);
+			
+			//Use the first Rectangle in the config file
 			Rectangle rect = file.get(0);
 			BufferedImage subImage = img.getSubimage(rect.x, rect.y, rect.width, rect.height);
 			HSBImage hsbImage = new HSBImage(subImage);
 			HSBColor medianColor = hsbImage.medianColor();
 			int c = Color.HSBtoRGB(medianColor.h, medianColor.s, medianColor.b);
 			String name = inFile.getName();
+			
+			//The class name is simply the name of the image (Possibly better ways to do this?)
 			name = name.substring(0, name.lastIndexOf('.'));
 			context.addNameMap(name, c);
 		}

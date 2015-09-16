@@ -7,8 +7,17 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+/**
+ * A Utility class which recreates a strip image based on what the 
+ * algorithm sees on the strip
+ */
 public class GenStrip {
 	public static void main(String[] args) throws IOException{
+		if(args.length < 4){
+			System.err.println("Usage: java GenStrip <white_location_config> <colour_location_config> <image> <output_file>");
+			System.exit(1);
+		}
+		
 		String whiteLocationFile = args[0];
 		String colourLocationFile = args[1];
 		String imgFile = args[2];
