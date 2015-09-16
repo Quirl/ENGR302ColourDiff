@@ -21,7 +21,7 @@ public class ColorRecog {
 			int rgbColor = nameColours.getValue();
 			HSBColor hsbColor = new HSBColor(rgbColor);
 			HSBColor diff = image.differenceFrom(hsbColor);
-			double dist = Math.sqrt(diff.h * diff.h + diff.s * diff.s);
+			double dist = Math.sqrt(diff.h * diff.h + diff.s * diff.s + diff.b * diff.b);
 			distances.put(name, dist);
 		}
 		
