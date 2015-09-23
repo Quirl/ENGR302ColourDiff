@@ -2,6 +2,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -29,10 +30,13 @@ public class WhiteBalance {
 	 * @return the median colour from the image
 	 */
 	private Color getMedianColor(BufferedImage img){
-		int[] reds = new int[img.getWidth() * img.getHeight()];
-		int[] greens = new int[img.getWidth() * img.getHeight()];
-		int[] blues = new int[img.getWidth() * img.getHeight()];
-		int[] rgbs = new int[img.getWidth() * img.getHeight()];
+		int pointCount = img.getWidth() * img.getHeight();
+
+		int[] rgbs = new int[pointCount];
+		int[] reds = new int[pointCount];
+		int[] greens = new int[pointCount];
+		int[] blues = new int[pointCount];
+		
 		img.getRGB(0, 0, img.getWidth(), img.getHeight(), rgbs, 0, img.getWidth());
 		for(int i = 0;i < rgbs.length;i ++){
 			int rgb = rgbs[i];
@@ -44,10 +48,20 @@ public class WhiteBalance {
 		Arrays.sort(reds);
 		Arrays.sort(greens);
 		Arrays.sort(blues);
-		int red = reds[reds.length / 2];
-		int green = greens[greens.length / 2];
-		int blue = blues[blues.length / 2];
-		return new Color(red, green, blue);
+		
+		//Find the average of the interquartile range
+		int r = 0, g = 0, b = 0;
+		int lowerQuartile = (int)Math.floor(pointCount/4.0);
+		int upperQuartile = (int)Math.floor(3.0*(pointCount/4.0));
+		System.out.println(img.getWidth() * img.getHeight() + " " + lowerQuartile + " " + upperQuartile);
+		int quartileRange = upperQuartile - lowerQuartile + 1;
+		for (int i = lowerQuartile; i <= upperQuartile; i++){
+			r += reds[i];
+			g += greens[i];
+			b += blues[i];
+		}
+		System.out.println(r);
+		return new Color(r/quartileRange, g/quartileRange, b/quartileRange);
 	}
 
 	/**
@@ -57,11 +71,18 @@ public class WhiteBalance {
 	 * @return the distance between the point and the rectangle
 	 */
 	private double distanceFromRectangle(Point p, Rectangle r){
-		Line2D[] sidesOfRectangle = new Line2D.Double[4];
-		sidesOfRectangle[0] = new Line2D.Double(r.getMinX(), r.getMinY(), r.getMinX() + r.getWidth(), r.getMinY());
-		sidesOfRectangle[1] = new Line2D.Double(r.getMinX() + r.getWidth(), r.getMinY(), r.getMinX() + r.getWidth(), r.getMinY() + r.getHeight());
-		sidesOfRectangle[2] = new Line2D.Double(r.getMinX() + r.getWidth(), r.getMinY() + r.getHeight(), r.getMinX(), r.getMinY() + r.getHeight());
-		sidesOfRectangle[3] = new Line2D.Double(r.getMinX(), r.getMinY() + r.getHeight(), r.getMinX(), r.getMinY());
+		Point2D topLeft = new Point2D.Double(r.getMinX(), r.getMinY());
+		Point2D topRight = new Point2D.Double(r.getMaxX(), r.getMinY());
+		Point2D bottomLeft = new Point2D.Double(r.getMinX(), r.getMaxY());
+		Point2D bottomRight = new Point2D.Double(r.getMaxX(), r.getMaxY());
+		
+		Line2D[] sidesOfRectangle = new Line2D.Double[]{
+			new Line2D.Double(topLeft, topRight),
+			new Line2D.Double(topRight, bottomRight),
+			new Line2D.Double(bottomRight, bottomLeft),
+			new Line2D.Double(bottomLeft, topLeft)
+		};
+		
 		double minDistance = Double.POSITIVE_INFINITY;
 		for(Line2D side : sidesOfRectangle){
 			double distance = side.ptLineDist(p);
