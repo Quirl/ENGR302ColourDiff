@@ -53,14 +53,14 @@ public class WhiteBalance {
 		int r = 0, g = 0, b = 0;
 		int lowerQuartile = (int)Math.floor(pointCount/4.0);
 		int upperQuartile = (int)Math.floor(3.0*(pointCount/4.0));
-		System.out.println(img.getWidth() * img.getHeight() + " " + lowerQuartile + " " + upperQuartile);
+
 		int quartileRange = upperQuartile - lowerQuartile + 1;
 		for (int i = lowerQuartile; i <= upperQuartile; i++){
 			r += reds[i];
 			g += greens[i];
 			b += blues[i];
 		}
-		System.out.println(r);
+
 		return new Color(r/quartileRange, g/quartileRange, b/quartileRange);
 	}
 
